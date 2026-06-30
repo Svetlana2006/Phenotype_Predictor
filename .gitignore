@@ -1,0 +1,60 @@
+# ── Large raw data files (exceed GitHub 100 MB limit) ─────────────────────────
+data/raw/**/*.gz
+data/raw/**/*.vcf
+data/raw/**/*.vcf.gz
+data/raw/**/*.bam
+data/raw/**/*.bam.bai
+data/raw/**/*.fastq
+data/raw/**/*.fastq.gz
+
+# ── Large output / intermediate files ─────────────────────────────────────────
+outputs/**/*.csv
+outputs/**/*.parquet
+outputs/**/*.h5
+outputs/**/*.pkl
+
+# If you want to keep small result CSVs, add exceptions like:
+# !outputs/summary_*.csv
+
+# ── Python ────────────────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+.eggs/
+*.egg
+
+# ── Virtual environments ───────────────────────────────────────────────────────
+.venv/
+venv/
+env/
+ENV/
+
+# ── Jupyter ───────────────────────────────────────────────────────────────────
+.ipynb_checkpoints/
+*.ipynb
+
+# ── ML model weights & checkpoints ────────────────────────────────────────────
+models/**/*.pt
+models/**/*.pth
+models/**/*.ckpt
+models/**/*.bin
+models/**/*.h5
+models/**/*.onnx
+
+# ── OS / IDE ──────────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# ── Secrets / credentials ─────────────────────────────────────────────────────
+.env
+*.env
+secrets.yaml
