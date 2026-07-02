@@ -37,13 +37,13 @@ print("MODEL RESULTS  (test set = 20% held-out, ~33 samples)")
 print("=" * 55)
 best_mae = min(r.metrics["mae"] for r in results)
 for r in results:
-    star = " ★" if r.metrics["mae"] == best_mae else ""
+    star = " *BEST*" if r.metrics["mae"] == best_mae else ""
     print(
-        f"  {r.model_name:<25}  MAE={r.metrics['mae']:5.2f} yrs   R²={r.metrics['r2']:.4f}{star}"
+        f"  {r.model_name:<25}  MAE={r.metrics['mae']:5.2f} yrs   R2={r.metrics['r2']:.4f}{star}"
     )
 print()
 print("  MAE = mean absolute error in years (lower is better)")
-print("  R²  = variance explained        (closer to 1.0 is better)")
+print("  R2  = variance explained        (closer to 1.0 is better)")
 print()
 
 # Write model cards
