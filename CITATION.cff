@@ -1,0 +1,10 @@
+cff-version: 1.2.0
+message: "If you use this software in your research, please cite it as below."
+authors:
+  - family-names: "Predictor"
+    given-names: "Svetlana"
+title: "Forensic Phenotype Predictor"
+version: 1.0.0
+date-released: 2026-07-03
+url: "https://github.com/Svetlana/Phenotype_Predictor"
+abstract: "A population-aware multi-model framework for predicting human phenotypes from degraded forensic genomic data."

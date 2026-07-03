@@ -2,6 +2,10 @@
 
 A population-aware, multi-model platform designed for forensic genetic phenotyping. It ingests degraded, unaligned raw DNA sequences and accurately infers human physical traits (Eye Color, Hair Color, Skin Color, and Global Ancestry).
 
+## System Architecture Design
+
+![Architecture Diagram](docs/architecture.png)
+
 ## What's New in Version 1.0 (Stable Release)
 
 We have officially transitioned from experimental ML scripts to a fully integrated, production-ready forensic application. 
@@ -21,7 +25,7 @@ Pure AI is a "black box," which is unacceptable in legal investigations. We wrot
 ### 4. Next.js Forensic Dashboard
 *   **Evidence Quality Meter:** A visual UI component that calculates `(snps_found / 41) * 100` to give detectives a color-coded confidence score before trusting the AI.
 *   **Transparent Routing Banners:** The UI proudly announces which mathematical model was activated via live toast notifications.
-*   **Reproducibility Report:** Every prediction generates a cryptographic receipt listing the exact `Model Version`, `Training Dataset`, `Software Version`, and `Timestamp` (UTC).
+*   **Reproducibility Report:** Every prediction is accompanied by reproducibility metadata, including model version, training dataset, software version, and commit hash.
 
 ### 5. API & Infrastructure
 *   **FastAPI Backend:** Fully asynchronous backend (`/api/v1/predict/raw`) secured with professional standard Python `logging`.
@@ -58,4 +62,6 @@ python -m pytest
 ## Documentation
 *   `PRODUCT.md`: User personas, investigative limitations, and feature roadmap.
 *   `benchmark.md`: Official accuracy metrics, latency measurements (Avg. 272ms), and memory requirements.
+*   `docs/architecture.md`: Flowchart image visualizing the system infrastructure.
+*   `docs/api.md`: REST API endpoint schemas and JSON payloads.
 *   `docs/ethics.md`: Guidelines for minimizing population bias and respecting genetic privacy.

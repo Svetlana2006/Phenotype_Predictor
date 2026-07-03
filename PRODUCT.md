@@ -13,7 +13,7 @@ Our software solves this by generating a **physical description of the unknown s
 *   **Degradation Resilient:** Real-world forensic DNA is often highly degraded. Instead of failing when data is missing, our system dynamically hot-swaps to a **Sparse Ancestry Model** (requiring only 41 SNPs) to guarantee a result.
 *   **Transparent Imputation:** Existing tools quietly guess missing genes using global averages, causing severe biases (e.g., hallucinating dark skin/eyes). Our platform actively measures **Evidence Quality** and mathematically blocks this hallucination.
 *   **Explainability:** Pure AI is a "black box," which is unacceptable in court. Our engine extracts the mathematical weights of the AI and visualizes exactly *which specific genes* drove the prediction.
-*   **Reproducibility:** Every prediction is cryptographically stamped with the model version, training dataset, and software commit hash.
+*   **Reproducibility:** Every prediction is accompanied by reproducibility metadata, including model version, training dataset, software version, and commit hash.
 
 ## 4. Key User Stories
 *   *As an investigator*, I want to paste raw, unaligned DNA strings straight from NCBI into the system without needing to format it into complex CSV/VCF files.
