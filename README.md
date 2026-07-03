@@ -6,6 +6,25 @@ A population-aware, multi-model platform designed for forensic genetic phenotypi
 
 ![Architecture Diagram](docs/architecture.png)
 
+## Dashboard Gallery
+
+*The Next.js Forensic Dashboard provides an intuitive interface for uploading DNA and interpreting AI decisions.*
+
+**1. Home Page**
+![Home Page](docs/media/1_home.png)
+
+**2. CSV Upload Page**
+![Upload CSV](docs/media/2_upload_csv.png)
+
+**3. Raw Sequence Parser**
+![Upload Raw Sequence](docs/media/3_upload_raw.png)
+
+**4. Prediction Results & Evidence Quality**
+![Prediction Results](docs/media/4_prediction_results.png)
+
+**5. Explainability Panel**
+![Explainability Panel](docs/media/5_explainability.png)
+
 ## What's New in Version 1.0 (Stable Release)
 
 We have officially transitioned from experimental ML scripts to a fully integrated, production-ready forensic application. 
