@@ -23,6 +23,7 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
+from sklearn.impute import SimpleImputer
 from sklearn.metrics import balanced_accuracy_score, classification_report
 from phenotype_predictor.reporting import write_model_card
 
@@ -85,10 +86,12 @@ TRAITS = {
 
 MODELS = {
     "logistic_regression": Pipeline([
+        ("imputer", SimpleImputer(strategy="median")),
         ("scaler", StandardScaler()),
         ("clf",    LogisticRegression(max_iter=1000, random_state=RANDOM_STATE, C=1.0)),
     ]),
     "random_forest": Pipeline([
+        ("imputer", SimpleImputer(strategy="median")),
         ("clf", RandomForestClassifier(
             n_estimators=300,
             max_features="sqrt",
@@ -129,15 +132,11 @@ for trait, (trait_name, _) in TRAITS.items():
     for model_name, pipe in MODELS.items():
         out_path = trait_dir / f"{model_name}.joblib"
 
-        if out_path.exists():
-            print(f"  {model_name}: already trained, loading...")
-            pipe = joblib.load(out_path)
-        else:
-            print(f"  Fitting {model_name}...", flush=True)
-            t0 = time.time()
-            pipe.fit(X_tr, y_tr)
-            print(f"    Done in {time.time()-t0:.1f}s")
-            joblib.dump(pipe, out_path)
+        print(f"  Fitting {model_name}...", flush=True)
+        t0 = time.time()
+        pipe.fit(X_tr, y_tr)
+        print(f"    Done in {time.time()-t0:.1f}s")
+        joblib.dump(pipe, out_path)
 
         preds = pipe.predict(X_te)
         ba = balanced_accuracy_score(y_te, preds)

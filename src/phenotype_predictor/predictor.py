@@ -201,18 +201,18 @@ class PhenotypePredictor:
     def _make_pig_vector(self, snp_dosages: dict[str, int]) -> pd.DataFrame:
         """
         Build a 1-row DataFrame of HIrisPlex dosage features from raw dosages.
-        Missing SNPs are imputed with 0 (homozygous reference).
+        Missing SNPs are left as NaN to trigger pipeline median imputation.
         """
         row = {}
         for marker in HIRISPLEX_S_MARKERS:
             # Accept both rsID_Allele format and plain rsID
             val = snp_dosages.get(marker.feature_name,
-                  snp_dosages.get(marker.rsid, 0))
-            row[marker.feature_name] = int(val) if val is not None else 0
+                  snp_dosages.get(marker.rsid, None))
+            row[marker.feature_name] = int(val) if val is not None else float('nan')
         return pd.DataFrame([row])
 
     def _make_ancestry_vector(self, snp_dosages: dict[str, int]) -> pd.DataFrame:
-        row = {f: snp_dosages.get(f, snp_dosages.get(f.split("_")[0], 0))
+        row = {f: snp_dosages.get(f, snp_dosages.get(f.split("_")[0], float('nan')))
                for f in self._ancestry_features}
         return pd.DataFrame([row])
 

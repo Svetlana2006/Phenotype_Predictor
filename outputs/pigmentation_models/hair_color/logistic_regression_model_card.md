@@ -1,6 +1,6 @@
 # Hair Color model: logistic_regression
 
-Generated: 2026-07-02T15:10:22.211273Z
+Generated: 2026-07-03T05:47:18.011556Z
 
 ## Training Data
 
@@ -12,7 +12,7 @@ hair_color
 
 ## Metrics
 
-- balanced_accuracy: 0.6609
+- balanced_accuracy: 0.9109
 
 ## Limitations
 

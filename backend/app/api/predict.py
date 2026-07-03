@@ -1,10 +1,12 @@
 import io
 import traceback
 import pandas as pd
-from fastapi import APIRouter, UploadFile, File, HTTPException, Depends
+from fastapi import APIRouter, UploadFile, File, HTTPException, Depends, Body
+from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from ..services.ml_service import get_predictor
+from ..services.sequence_extractor import extract_snps_from_sequence
 from ..schemas.predict import BatchPredictionResponse
 from ..core.security import get_current_user
 from ..core.database import get_db
@@ -12,6 +14,47 @@ from ..db_models.user import User
 from ..db_models.prediction import Prediction
 
 router = APIRouter(tags=["Predict"])
+
+class RawSequenceRequest(BaseModel):
+    sequence: str
+    sample_id: str = "Raw_Sequence_1"
+
+@router.post("/predict/raw", response_model=BatchPredictionResponse)
+async def predict_from_raw_sequence(
+    request: RawSequenceRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    try:
+        extracted_snps = extract_snps_from_sequence(request.sequence)
+        
+        if not extracted_snps:
+            raise HTTPException(400, "No recognizable HIrisPlex SNPs could be extracted from the provided sequence.")
+            
+        predictor = get_predictor()
+        result = predictor.predict(extracted_snps)
+        result_dict = result.to_dict()
+        result_dict["sample_id"] = request.sample_id
+        
+        # Guard against low-confidence Ancestry predictions from degraded forensic sequences
+        if len(extracted_snps) < 15:
+            result_dict["hard_labels"]["ancestry"] = "Insufficient Data"
+        
+        db_prediction = Prediction(
+            user_id=current_user.id,
+            snps_provided=result.snps_provided,
+            result_json=result_dict
+        )
+        db.add(db_prediction)
+        db.commit()
+        
+        return {"samples": [result_dict]}
+    except HTTPException:
+        raise
+    except Exception as e:
+        traceback.print_exc()
+        raise HTTPException(500, f"Error processing raw sequence: {str(e)}")
+
 
 
 @router.post("/predict", response_model=BatchPredictionResponse)
