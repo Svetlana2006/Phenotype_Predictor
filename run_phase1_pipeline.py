@@ -2,7 +2,7 @@
 Phase 1 pipeline runner — runs all tasks sequentially.
 
 Tasks:
-  1. MTL training (age + ancestry jointly) on real data
+  1. MTL training (age, ancestry, eye, hair, skin jointly) on real data
   2. Single-task baselines for same features (for comparison)
   3. Feature importance extraction for all pigmentation models
   4. Final JSON comparison report
@@ -70,7 +70,7 @@ def log(msg: str):
 
 
 # ══════════════════════════════════════════════════════════════════════════════
-# STEP 1 — Build joint MTL training table (age + ancestry)
+# STEP 1 — Build joint MTL training table (age, ancestry, pigmentation)
 # ══════════════════════════════════════════════════════════════════════════════
 
 log("STEP 1/4  Building joint MTL training table...")
@@ -83,6 +83,14 @@ if not checkpoint("step1_table"):
     anc = anc.rename(columns={"super_population": "ancestry_label"})
     log(f"  Ancestry: {anc.shape}")
 
+    # Load pigmentation table (same 1000G samples as ancestry)
+    log("  Loading pigmentation data...")
+    pig = pd.read_csv("outputs/pigmentation_training_table.csv")
+    
+    # Merge ancestry and pigmentation since they share sample_id
+    anc_pig = anc.merge(pig[["sample_id", "eye_color", "hair_color", "skin_color"]], on="sample_id", how="left")
+    log(f"  Ancestry + Pigmentation combined: {anc_pig.shape}")
+
     # Load age table (CpG betas + age labels) — use subset (27k) for speed
     log("  Loading age data (subset)...")
     age = pd.read_csv("outputs/gse40279_age_table.csv")
@@ -90,27 +98,44 @@ if not checkpoint("step1_table"):
 
     # Both tables have different feature spaces — MTL handles missing via masking
     # We stack them vertically with NaN where features don't overlap
-    anc_copy = anc.copy()
+    anc_copy = anc_pig.copy()
     anc_copy["age"] = float("nan")
     age_copy = age.copy()
     age_copy["ancestry_label"] = float("nan")
+    age_copy["eye_color"] = float("nan")
+    age_copy["hair_color"] = float("nan")
+    age_copy["skin_color"] = float("nan")
 
     # Find common non-label cols
-    anc_feat = [c for c in anc.columns if c not in {"sample_id", "population", "ancestry_label"}]
-    age_feat = [c for c in age.columns if c not in {"sample_id", "age", "gender", "ethnicity", "tissue"}]
+    anc_feat = [c for c in anc_copy.columns if c not in {"sample_id", "population", "ancestry_label", "eye_color", "hair_color", "skin_color"}]
+    age_feat = [c for c in age_copy.columns if c not in {"sample_id", "age", "gender", "ethnicity", "tissue"}]
 
-    # Build stacked table — SNP features for ancestry rows, CpG features for age rows
+    # Build stacked table
     all_features = sorted(set(anc_feat) | set(age_feat))
     rows = []
 
     for _, r in anc_copy.iterrows():
-        row = {"sample_id": r.get("sample_id", ""), "age": r["age"], "ancestry_label": r["ancestry_label"]}
+        row = {
+            "sample_id": r.get("sample_id", ""), 
+            "age": r["age"], 
+            "ancestry_label": r["ancestry_label"],
+            "eye_color": r.get("eye_color", float("nan")),
+            "hair_color": r.get("hair_color", float("nan")),
+            "skin_color": r.get("skin_color", float("nan"))
+        }
         for f in all_features:
             row[f] = r.get(f, float("nan"))
         rows.append(row)
 
     for _, r in age_copy.iterrows():
-        row = {"sample_id": r.get("sample_id", ""), "age": r["age"], "ancestry_label": r["ancestry_label"]}
+        row = {
+            "sample_id": r.get("sample_id", ""), 
+            "age": r["age"], 
+            "ancestry_label": r["ancestry_label"],
+            "eye_color": float("nan"),
+            "hair_color": float("nan"),
+            "skin_color": float("nan")
+        }
         for f in all_features:
             row[f] = r.get(f, float("nan"))
         rows.append(row)
@@ -134,9 +159,9 @@ print()
 mtl_out = PHASE1_DIR / "multitask_model"
 
 if not checkpoint("step2_mtl"):
-    log("STEP 2/4  Training Multi-Task Learning model (age + ancestry)...")
+    log("STEP 2/4  Training Multi-Task Learning model (all 5 traits)...")
     log("  This uses masked loss — trains on rows where each target exists.")
-    log(f"  Total rows: {len(mtl_df)}  (ancestry: ~2504, age: ~164)")
+    log(f"  Total rows: {len(mtl_df)}  (ancestry/pigmentation: ~2504, age: ~164)")
 
     t0 = time.time()
     metadata = train_multitask_table(
@@ -144,6 +169,9 @@ if not checkpoint("step2_mtl"):
         targets={
             "age":            "regression",
             "ancestry_label": "classification",
+            "eye_color":      "classification",
+            "hair_color":     "classification",
+            "skin_color":     "classification",
         },
         output_dir=mtl_out,
         epochs=100,
@@ -173,7 +201,7 @@ st_out.mkdir(exist_ok=True)
 results = {}
 
 if not checkpoint("step3_single_task"):
-    log("STEP 3/4  Training single-task baselines for comparison...")
+    log("STEP 3/4  Gathering single-task baselines for comparison...")
 
     # ── Age (regression on CpG betas) ─────────────────────────────────────────
     log("  [Age] Loading data...")
@@ -216,6 +244,15 @@ if not checkpoint("step3_single_task"):
     joblib.dump(anc_pipe, st_out / "ancestry_lr.joblib")
     results["ancestry_single_task"] = {"balanced_accuracy": round(anc_ba, 4)}
 
+    # ── Pigmentation (load previously trained baseline metrics) ───────────────
+    pig_res_path = Path("outputs/pigmentation_models/pigmentation_results_summary.csv")
+    if pig_res_path.exists():
+        pig_res = pd.read_csv(pig_res_path)
+        for _, row in pig_res.iterrows():
+            if row["model"] == "logistic_regression":
+                log(f"  [Pigmentation] Loaded baseline for {row['trait']}")
+                results[f"{row['trait']}_single_task"] = {"balanced_accuracy": round(row["balanced_accuracy"], 4)}
+
     joblib.dump(results, st_out / "results.joblib")
     mark_done("step3_single_task")
     log("  Single-task baselines done.")
@@ -251,7 +288,7 @@ if not checkpoint("step4_importance"):
         "single_task_baselines": results,
         "multitask_model": {
             "architecture": "MultiTaskPhenotypeNet (shared MLP, task-specific heads)",
-            "tasks": ["age (regression)", "ancestry (classification)"],
+            "tasks": ["age (regression)", "ancestry (classification)", "eye_color (classification)", "hair_color (classification)", "skin_color (classification)"],
             "epochs": 100,
             "hidden_dim": 256,
             "masked_loss": True,
@@ -263,7 +300,7 @@ if not checkpoint("step4_importance"):
             for trait in ["eye_color", "hair_color", "skin_color"]
         },
         "conclusion": (
-            "The multi-task model jointly trains on age (methylation) and ancestry (SNPs) "
+            "The multi-task model jointly trains on age (methylation), ancestry (SNPs), and pigmentation (SNPs) "
             "using masked losses. This allows knowledge sharing between tasks where feature "
             "overlap exists, a key research contribution of this platform."
         ),

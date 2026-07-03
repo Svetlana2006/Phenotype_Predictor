@@ -1,0 +1,76 @@
+{
+  "title": "Multi-Task vs Single-Task Learning \u2014 Phase 1 Results",
+  "generated_at": "2026-07-02 22:47:06.109155",
+  "single_task_baselines": {
+    "age_single_task": {
+      "MAE": 7.714,
+      "R2": 0.5076
+    },
+    "ancestry_single_task": {
+      "balanced_accuracy": 0.6983
+    },
+    "eye_color_single_task": {
+      "balanced_accuracy": 1.0
+    },
+    "hair_color_single_task": {
+      "balanced_accuracy": 0.6609
+    },
+    "skin_color_single_task": {
+      "balanced_accuracy": 0.982
+    }
+  },
+  "multitask_model": {
+    "architecture": "MultiTaskPhenotypeNet (shared MLP, task-specific heads)",
+    "tasks": [
+      "age (regression)",
+      "ancestry (classification)",
+      "eye_color (classification)",
+      "hair_color (classification)",
+      "skin_color (classification)"
+    ],
+    "epochs": 100,
+    "hidden_dim": 256,
+    "masked_loss": true,
+    "final_training_loss": 2.3563132342838107,
+    "note": "MTL uses masked loss \u2014 each task only contributes to loss for rows where its label exists."
+  },
+  "feature_importances": {
+    "eye_color": [
+      "rs12896399",
+      "rs16891982",
+      "rs6119471",
+      "rs28777",
+      "rs1426654",
+      "rs10756819",
+      "rs1667394",
+      "rs2402130",
+      "rs12203592",
+      "rs1545397"
+    ],
+    "hair_color": [
+      "rs16891982",
+      "rs28777",
+      "rs12203592",
+      "rs2228479",
+      "rs1426654",
+      "rs1667394",
+      "rs1805008",
+      "rs10756819",
+      "rs1805007",
+      "rs4959270"
+    ],
+    "skin_color": [
+      "rs1426654",
+      "rs1800414",
+      "rs28777",
+      "rs16891982",
+      "rs10756819",
+      "rs2228479",
+      "rs6119471",
+      "rs1545397",
+      "rs12896399",
+      "rs1667394"
+    ]
+  },
+  "conclusion": "The multi-task model jointly trains on age (methylation), ancestry (SNPs), and pigmentation (SNPs) using masked losses. This allows knowledge sharing between tasks where feature overlap exists, a key research contribution of this platform."
+}
