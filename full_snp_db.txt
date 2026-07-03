@@ -1,0 +1,17 @@
+SNP_FLANKING_DB = {
+    "rs312262906": {"up": "CTGGGGCTGGCTGCC", "down": "ACCAGACAGGAGCCC", "target_allele": "A", "complement": "T"},
+    "rs11547464": {"up": "CCATCGCCGTGGACC", "down": "CTACATCTCCATCTT", "target_allele": "A", "complement": "T"},
+    "rs885479": {"up": "TGCCGCGGGCGCGGC", "down": "AGCCGTTGCGGCCAT", "target_allele": "T", "complement": "A"},
+    "rs1805008": {"up": "ATCGTGACCCTGCCG", "down": "GGGCGCGGCGAGCCG", "target_allele": "T", "complement": "A"},
+    "rs1805005": {"up": "GAGAACGCGCTGGTG", "down": "TGGCCACCATCGCCA", "target_allele": "T", "complement": "A"},
+    "rs1805006": {"up": "CCTGGCCTTGTCGGA", "down": "CTGCTGGTGAGCGGG", "target_allele": "A", "complement": "T"},
+    "rs1805007": {"up": "ATCTTCTACGCACTG", "down": "GCTACCACAGCATCG", "target_allele": "T", "complement": "A"},
+    "rs1805009": {"up": "TGCAATGCCATCATC", "down": "ACCCCCTCATCTACG", "target_allele": "C", "complement": "G"},
+    "rs201326893": {"up": "CTACGCACTGCGCTA", "down": "CACAGCATCGTGACC", "target_allele": "A", "complement": "T"},
+    "rs2228479": {"up": "GTGAGCGGGAGCAAC", "down": "TGCTGGAGACGGCCG", "target_allele": "A", "complement": "T"},
+    "rs1110400": {"up": "TGCGCTACCACAGCA", "down": "CGTGACCCTGCCGCG", "target_allele": "C", "complement": "G"},
+    "rs28777": {"up": "TGATCCTCACAGCAG", "down": "CTCTGAGTGGATGGG", "target_allele": "C", "complement": "G"},
+    "rs1800407": {"up": "GCCCACACCCGTCCC", "down": "GGGAGAGCCGGTATG", "target_allele": "A", "complement": "T"},
+    "rs10756819": {"up": "TATTTTGGGTTTGGA", "down": "ATCATACAATAATTT", "target_allele": "G", "complement": "C"},
+    "rs2238289": {"up": "GCCAATCCAATTCCC", "down": "GGCTCCAATCTTCCA", "target_allele": "C", "complement": "G"},
+}

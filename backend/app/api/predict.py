@@ -36,10 +36,6 @@ async def predict_from_raw_sequence(
         result_dict = result.to_dict()
         result_dict["sample_id"] = request.sample_id
         
-        # Guard against low-confidence Ancestry predictions from degraded forensic sequences
-        if len(extracted_snps) < 15:
-            result_dict["hard_labels"]["ancestry"] = "Insufficient Data"
-        
         db_prediction = Prediction(
             user_id=current_user.id,
             snps_provided=result.snps_provided,

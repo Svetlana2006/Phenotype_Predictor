@@ -128,8 +128,10 @@ class PhenotypePredictor:
         hair_model,
         skin_model,
         ancestry_model,
+        sparse_ancestry_model,
         age_model,
         ancestry_features: list[str],
+        sparse_ancestry_features: list[str],
         age_features: list[str],
         model_variant: str = "logistic_regression",
     ):
@@ -137,8 +139,10 @@ class PhenotypePredictor:
         self._hair     = hair_model
         self._skin     = skin_model
         self._ancestry = ancestry_model
+        self._sparse_ancestry = sparse_ancestry_model
         self._age      = age_model
         self._ancestry_features = ancestry_features
+        self._sparse_ancestry_features = sparse_ancestry_features
         self._age_features      = age_features
         self._variant           = model_variant
 
@@ -171,6 +175,7 @@ class PhenotypePredictor:
         hair_model     = _load(pig / "hair_color" / f"{model_variant}.joblib")
         skin_model     = _load(pig / "skin_color" / f"{model_variant}.joblib")
         ancestry_model = _load(base / "ancestry_models" / f"{model_variant}.joblib")
+        sparse_ancestry_model = _load(base / "ancestry_models" / "sparse_ancestry.joblib")
         age_model      = _load(base / "age_models" / "ridge.joblib")
 
         # Load ancestry feature list (saved alongside the ancestry table)
@@ -178,6 +183,10 @@ class PhenotypePredictor:
         anc_df     = pd.read_csv(anc_table, nrows=0)
         drop = {"sample_id", "population", "super_population"}
         ancestry_features = [c for c in anc_df.columns if c not in drop]
+        
+        # Load sparse ancestry features
+        with open(base / "ancestry_models" / "sparse_features.txt") as f:
+            sparse_ancestry_features = f.read().strip().split(',')
 
         # Age features = all columns except metadata
         age_table = base / "gse40279_age_table.csv"
@@ -190,8 +199,10 @@ class PhenotypePredictor:
             hair_model=hair_model,
             skin_model=skin_model,
             ancestry_model=ancestry_model,
+            sparse_ancestry_model=sparse_ancestry_model,
             age_model=age_model,
             ancestry_features=ancestry_features,
+            sparse_ancestry_features=sparse_ancestry_features,
             age_features=age_features,
             model_variant=model_variant,
         )
@@ -211,9 +222,10 @@ class PhenotypePredictor:
             row[marker.feature_name] = int(val) if val is not None else float('nan')
         return pd.DataFrame([row])
 
-    def _make_ancestry_vector(self, snp_dosages: dict[str, int]) -> pd.DataFrame:
+    def _make_ancestry_vector(self, snp_dosages: dict[str, int], sparse: bool = False) -> pd.DataFrame:
+        features = self._sparse_ancestry_features if sparse else self._ancestry_features
         row = {f: snp_dosages.get(f, snp_dosages.get(f.split("_")[0], float('nan')))
-               for f in self._ancestry_features}
+               for f in features}
         return pd.DataFrame([row])
 
     @staticmethod
@@ -282,8 +294,13 @@ class PhenotypePredictor:
 
         # ── Ancestry prediction ───────────────────────────────────────────────
         try:
-            X_anc = self._make_ancestry_vector(snp_dosages)
-            anc_probs = self._proba_dict(self._ancestry, X_anc)
+            # Dynamically select the robust ancestry model based on data density
+            sparse_mode = result.snps_provided < 100
+            
+            X_anc = self._make_ancestry_vector(snp_dosages, sparse=sparse_mode)
+            model_to_use = self._sparse_ancestry if sparse_mode else self._ancestry
+            
+            anc_probs = self._proba_dict(model_to_use, X_anc)
             result.ancestry = anc_probs
             result.confidence["ancestry"] = max(anc_probs.values())
         except Exception:
