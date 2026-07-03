@@ -25,6 +25,7 @@ import numpy as np
 import pandas as pd
 
 from phenotype_predictor.markers.hirisplex import HIRISPLEX_S_MARKERS
+from phenotype_predictor.explainability import get_feature_importances
 
 
 # ── Result dataclass ──────────────────────────────────────────────────────────
@@ -43,8 +44,8 @@ class PhenotypeResult:
     age_estimate: Optional[float] = None
     age_range:    Optional[tuple[float, float]] = None  # (lo, hi) 80% interval
 
-    # Top SNPs by importance across all pigmentation traits
-    top_snps: dict[str, float] = field(default_factory=dict)
+    # Feature Importances (Top SNPs) driving the prediction for each trait
+    feature_importances: dict[str, dict[str, float]] = field(default_factory=dict)
 
     # Per-trait confidence = max probability
     confidence: dict[str, float] = field(default_factory=dict)
@@ -75,16 +76,16 @@ class PhenotypeResult:
     def to_dict(self) -> dict:
         return {
             "predictions": {
-                "eye_color":  {"probabilities": self.eye_color,  "confidence": self.confidence.get("eye_color")},
-                "hair_color": {"probabilities": self.hair_color, "confidence": self.confidence.get("hair_color")},
-                "skin_color": {"probabilities": self.skin_color, "confidence": self.confidence.get("skin_color")},
-                "ancestry":   {"probabilities": self.ancestry,   "confidence": self.confidence.get("ancestry")},
+                "eye_color":  {"probabilities": self.eye_color,  "confidence": self.confidence.get("eye_color"), "feature_importances": self.feature_importances.get("eye_color", {})},
+                "hair_color": {"probabilities": self.hair_color, "confidence": self.confidence.get("hair_color"), "feature_importances": self.feature_importances.get("hair_color", {})},
+                "skin_color": {"probabilities": self.skin_color, "confidence": self.confidence.get("skin_color"), "feature_importances": self.feature_importances.get("skin_color", {})},
+                "ancestry":   {"probabilities": self.ancestry,   "confidence": self.confidence.get("ancestry"), "feature_importances": self.feature_importances.get("ancestry", {})},
                 "age": {
                     "estimate": self.age_estimate,
                     "range":    list(self.age_range) if self.age_range else None,
                 },
             },
-            "top_snps":      self.top_snps,
+            "feature_importances": self.feature_importances,
             "hard_labels":   self.hard_labels(),
             "coverage": {
                 "snps_provided": self.snps_provided,
@@ -291,6 +292,12 @@ class PhenotypePredictor:
         result.confidence["eye_color"]  = max(eye_probs.values())
         result.confidence["hair_color"] = max(hair_probs.values())
         result.confidence["skin_color"] = max(skin_probs.values())
+        
+        # Calculate Explainability for Pigmentation
+        pig_features = X_pig.columns.tolist()
+        result.feature_importances["eye_color"] = get_feature_importances(self._eye, pig_features)
+        result.feature_importances["hair_color"] = get_feature_importances(self._hair, pig_features)
+        result.feature_importances["skin_color"] = get_feature_importances(self._skin, pig_features)
 
         # ── Ancestry prediction ───────────────────────────────────────────────
         try:
@@ -303,6 +310,10 @@ class PhenotypePredictor:
             anc_probs = self._proba_dict(model_to_use, X_anc)
             result.ancestry = anc_probs
             result.confidence["ancestry"] = max(anc_probs.values())
+            
+            # Calculate Explainability for Ancestry
+            anc_features = X_anc.columns.tolist()
+            result.feature_importances["ancestry"] = get_feature_importances(model_to_use, anc_features)
         except Exception:
             result.ancestry = {}
 

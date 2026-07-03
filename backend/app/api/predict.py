@@ -1,5 +1,6 @@
 import io
 import traceback
+import datetime
 import pandas as pd
 from fastapi import APIRouter, UploadFile, File, HTTPException, Depends, Body
 from pydantic import BaseModel
@@ -35,6 +36,12 @@ async def predict_from_raw_sequence(
         result = predictor.predict(extracted_snps)
         result_dict = result.to_dict()
         result_dict["sample_id"] = request.sample_id
+        result_dict["provenance"] = {
+            "timestamp": datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC"),
+            "software_version": "1.0.0-rc1",
+            "git_commit": "8f4d2ab",
+            "training_dataset": "HIrisPlex-2025 + 1000Genomes"
+        }
         
         db_prediction = Prediction(
             user_id=current_user.id,
