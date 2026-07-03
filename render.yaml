@@ -25,7 +25,7 @@ services:
     startCommand: "cd frontend && npm run start"
     envVars:
       - key: NODE_VERSION
-        value: 18.17.0
+        value: 20.14.0
       # Dynamically connect the frontend to the backend URL that Render creates
       - key: NEXT_PUBLIC_API_URL
         fromService:
