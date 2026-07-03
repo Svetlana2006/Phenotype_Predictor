@@ -1,0 +1,57 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  
+  /* Deep Space Blacks */
+  --color-space-900: #030305;
+  --color-space-800: #08080C;
+  --color-space-700: #0F0F15;
+  --color-space-600: #181822;
+  --color-space-500: #222230;
+  
+  /* Neon Blue Accents */
+  --color-neon-blue: #00F0FF;
+  --color-neon-blue-glow: rgba(0, 240, 255, 0.5);
+  --color-neon-blue-dim: rgba(0, 240, 255, 0.15);
+  
+  /* Utilities */
+  --color-glass: rgba(15, 15, 21, 0.7);
+  --color-glass-border: rgba(255, 255, 255, 0.05);
+}
+
+@layer base {
+  :root {
+    background-color: var(--color-space-900);
+    color: #e2e8f0;
+    color-scheme: dark;
+  }
+
+  body {
+    background-color: var(--color-space-900);
+    background-image: 
+      radial-gradient(circle at 50% 0%, var(--color-neon-blue-dim) 0%, transparent 50%),
+      radial-gradient(circle at 0% 100%, rgba(0, 194, 255, 0.05) 0%, transparent 40%);
+    background-attachment: fixed;
+    min-height: 100vh;
+  }
+}
+
+@layer utilities {
+  .glass-panel {
+    background: var(--color-glass);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid var(--color-glass-border);
+    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.3);
+  }
+  
+  .text-glow {
+    text-shadow: 0 0 10px var(--color-neon-blue-glow);
+  }
+  
+  .neon-border {
+    border-color: var(--color-neon-blue);
+    box-shadow: 0 0 10px var(--color-neon-blue-dim), inset 0 0 5px var(--color-neon-blue-dim);
+  }
+}

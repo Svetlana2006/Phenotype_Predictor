@@ -8,8 +8,8 @@ from app.services.ml_service import get_predictor
 from app.core.database import engine
 from app.db_models.base import Base
 # Import models to ensure they register with SQLAlchemy Base
-import app.db_models.user
-import app.db_models.prediction
+from app.db_models import user
+from app.db_models import prediction
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -29,7 +29,7 @@ app = FastAPI(title="Phenotype Predictor API", lifespan=lifespan)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
-    allow_credentials=True,
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
