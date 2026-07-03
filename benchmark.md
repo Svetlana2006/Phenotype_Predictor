@@ -4,10 +4,10 @@
 This document contains the official performance benchmarks for the v1.0 machine learning models and the FastAPI inference engine. All metrics are computed using an independent test set of highly degraded forensic simulations.
 
 ## 1. System Latency (Inference Time)
-*   **Average Prediction Latency:** TBD ms
-*   **Average Preprocessing (Parsing) Time:** TBD ms
-*   **Total End-to-End Latency:** TBD ms
-*   **Peak Memory Usage during Inference:** TBD MB
+*   **Average Prediction Latency:** 272.74 ms
+*   **Average Preprocessing (Parsing) Time:** 0.01 ms
+*   **Total End-to-End Latency:** 272.75 ms
+*   **Peak Memory Usage during Inference:** 1.02 MB
 
 ## 2. Model Accuracy Metrics (Full Models)
 

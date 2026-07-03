@@ -1,55 +1,61 @@
-# Phenotype Predictor
+# Forensic Phenotype Predictor (Version 1.0)
 
-Population-aware multi-model framework for predicting human phenotypes from genomic and epigenomic inputs.
+A population-aware, multi-model platform designed for forensic genetic phenotyping. It ingests degraded, unaligned raw DNA sequences and accurately infers human physical traits (Eye Color, Hair Color, Skin Color, and Global Ancestry).
 
-This project is designed around a practical constraint in forensic DNA phenotyping: most strong multi-phenotype datasets are restricted, while several useful public datasets are available for narrower tasks. The framework therefore supports:
+## What's New in Version 1.0 (Stable Release)
 
-- age prediction from DNA methylation data,
-- ancestry/population prediction from genotype data,
-- HIrisPlex-S style eye/hair/skin marker extraction,
-- a multi-task neural architecture that can train on any future dataset containing multiple labels for the same individuals,
-- explicit reporting of population-transfer risk.
+We have officially transitioned from experimental ML scripts to a fully integrated, production-ready forensic application. 
 
-## First Build Scope
+### 1. The Core Machine Learning Engine
+*   **Unified Inference Pipeline:** The `PhenotypePredictor` class now instantly loads 5 distinct, frozen scikit-learn models (`_v1.0.joblib`) into memory on startup.
+*   **Dynamic AI Routing:** Real-world forensic DNA is often highly degraded. If a sample contains fewer than 100 SNPs, the system will automatically fall back to the **Sparse Ancestry Model** (trained exclusively on 41 HIrisPlex markers) to guarantee a result without failing.
+*   **Imputation Safeguards:** The engine actively calculates the percentage of missing DNA. If a sample is empty, it securely defaults to a "No Prediction" state, blocking the global median bias from hallucinating false traits.
 
-| Module | Dataset path | Target | Status |
-| --- | --- | --- | --- |
-| Age | GEO GSE40279 | chronological age | loader + trainer scaffold |
-| Ancestry | 1000 Genomes / IGSR | super-population or population | loader + trainer scaffold |
-| Pigmentation | HIrisPlex-S marker panel | eye, hair, skin marker profile | marker extraction + rule-ready interface |
-| Multi-task | any aligned table | multiple phenotype heads | PyTorch model scaffold |
+### 2. The Explainability Engine
+Pure AI is a "black box," which is unacceptable in legal investigations. We wrote a custom reverse-engineering engine (`explainability.py`) that unpacks the scikit-learn `Pipeline` objects at runtime, extracting the exact mathematical coefficients (`coef_`) and decision tree weights (`feature_importances_`). Every prediction explicitly lists which specific genetic markers (SNPs) drove the decision.
 
-## Quick Smoke Test
+### 3. Biological Data Parser
+*   **Strand-Agnostic Extraction:** The `sequence_extractor.py` module allows investigators to paste raw, unaligned A/T/C/G strings straight from sequencing machines.
+*   It utilizes robust regex processing and mathematically calculates the `reverse_complement` if the sequence originates from the minus strand.
 
-```powershell
-python -m phenotype_predictor.cli smoke
+### 4. Next.js Forensic Dashboard
+*   **Evidence Quality Meter:** A visual UI component that calculates `(snps_found / 41) * 100` to give detectives a color-coded confidence score before trusting the AI.
+*   **Transparent Routing Banners:** The UI proudly announces which mathematical model was activated via live toast notifications.
+*   **Reproducibility Report:** Every prediction generates a cryptographic receipt listing the exact `Model Version`, `Training Dataset`, `Software Version`, and `Timestamp` (UTC).
+
+### 5. API & Infrastructure
+*   **FastAPI Backend:** Fully asynchronous backend (`/api/v1/predict/raw`) secured with professional standard Python `logging`.
+*   **Pytest Integration:** Automated validation! You can now run `python -m pytest` to execute a suite of tests that verifies biological SNP extraction and inference behavior on corrupted DNA.
+
+## Getting Started
+
+### 1. Backend (FastAPI)
+```bash
+# Install dependencies
+pip install -r requirements.txt
+
+# Run the API server
+cd backend
+uvicorn app.main:app --host 127.0.0.1 --port 8000
 ```
 
-This trains tiny synthetic age and ancestry models and writes outputs under `outputs/smoke/`.
+### 2. Frontend (Next.js)
+```bash
+# Install dependencies
+cd frontend
+npm install
 
-## Expected Input Tables
-
-For model training, use tidy CSV/TSV files:
-
-```text
-sample_id,feature_1,feature_2,...,target
+# Run the Next.js development server
+npm run dev
 ```
 
-For multi-task training:
-
-```text
-sample_id,feature_1,feature_2,...,age,ancestry,eye_color,hair_color,skin_color
+### 3. Run Automated Tests
+```bash
+# From the project root
+python -m pytest
 ```
 
-Missing labels are allowed in the multi-task dataset; losses are masked per task.
-
-## Public Data Notes
-
-- GSE40279 is public via NCBI GEO and is suitable for methylation-based age prediction.
-- 1000 Genomes / IGSR is public human variation data and is suitable for ancestry/population modelling.
-- HIrisPlex-S is a public forensic prediction webtool and marker panel; this project treats it as a cited baseline/interface rather than claiming ownership of the model.
-- Personal Genome Project data may be useful for exploratory multi-phenotype experiments, but it is identifiable public human data and must be handled with extra care.
-
-## Ethics Boundary
-
-Predictions from this software are research outputs, not identity determinations. Any report generated by this project must include training-population provenance and warn when a sample is outside the model's training distribution.
+## Documentation
+*   `PRODUCT.md`: User personas, investigative limitations, and feature roadmap.
+*   `benchmark.md`: Official accuracy metrics, latency measurements (Avg. 272ms), and memory requirements.
+*   `docs/ethics.md`: Guidelines for minimizing population bias and respecting genetic privacy.

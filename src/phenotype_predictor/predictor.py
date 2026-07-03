@@ -16,6 +16,7 @@ Usage:
 from __future__ import annotations
 
 import json
+import logging
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Optional
@@ -26,6 +27,15 @@ import pandas as pd
 
 from phenotype_predictor.markers.hirisplex import HIRISPLEX_S_MARKERS
 from phenotype_predictor.explainability import get_feature_importances
+
+# Configure professional logger for the PhenotypePredictor engine
+logger = logging.getLogger("PhenotypePredictor")
+logger.setLevel(logging.INFO)
+if not logger.handlers:
+    ch = logging.StreamHandler()
+    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    ch.setFormatter(formatter)
+    logger.addHandler(ch)
 
 
 # ── Result dataclass ──────────────────────────────────────────────────────────
@@ -172,12 +182,12 @@ class PhenotypePredictor:
             return joblib.load(path)
 
         pig = base / "pigmentation_models"
-        eye_model      = _load(pig / "eye_color"  / f"{model_variant}.joblib")
-        hair_model     = _load(pig / "hair_color" / f"{model_variant}.joblib")
-        skin_model     = _load(pig / "skin_color" / f"{model_variant}.joblib")
-        ancestry_model = _load(base / "ancestry_models" / f"{model_variant}.joblib")
-        sparse_ancestry_model = _load(base / "ancestry_models" / "sparse_ancestry.joblib")
-        age_model      = _load(base / "age_models" / "ridge.joblib")
+        eye_model      = _load(pig / "eye_color"  / f"{model_variant}_v1.0.joblib")
+        hair_model     = _load(pig / "hair_color" / f"{model_variant}_v1.0.joblib")
+        skin_model     = _load(pig / "skin_color" / f"{model_variant}_v1.0.joblib")
+        ancestry_model = _load(base / "ancestry_models" / f"{model_variant}_v1.0.joblib")
+        sparse_ancestry_model = _load(base / "ancestry_models" / "sparse_ancestry_v1.0.joblib")
+        age_model      = _load(base / "age_models" / "ridge_v1.0.joblib")
 
         # Load ancestry feature list (saved alongside the ancestry table)
         anc_table  = base / "igsr_ancestry_table.csv"
@@ -268,13 +278,16 @@ class PhenotypePredictor:
         }
 
         # ── Coverage analysis ─────────────────────────────────────────────────
+        snps_count = len(snp_dosages)
+        result.snps_provided = snps_count
+        logger.info(f"Starting prediction pipeline. SNPs provided: {snps_count}")
+
         all_pig_rsids = {m.rsid for m in HIRISPLEX_S_MARKERS}
         all_pig_feat  = {m.feature_name for m in HIRISPLEX_S_MARKERS}
         provided = set(snp_dosages.keys())
         used     = provided & (all_pig_rsids | all_pig_feat)
         missing  = all_pig_rsids - {k.split("_")[0] for k in provided}
 
-        result.snps_provided = len(provided)
         result.snps_used     = len(used)
         result.snps_missing  = sorted(missing)
 
@@ -302,7 +315,10 @@ class PhenotypePredictor:
         # ── Ancestry prediction ───────────────────────────────────────────────
         try:
             # Dynamically select the robust ancestry model based on data density
-            sparse_mode = result.snps_provided < 100
+            sparse_mode = snps_count < 100
+            
+            if sparse_mode:
+                logger.warning(f"Sparse DNA detected ({snps_count} SNPs). Activating HIrisPlex fallback model.")
             
             X_anc = self._make_ancestry_vector(snp_dosages, sparse=sparse_mode)
             model_to_use = self._sparse_ancestry if sparse_mode else self._ancestry

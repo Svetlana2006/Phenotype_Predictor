@@ -6,13 +6,13 @@ from fastapi import APIRouter, UploadFile, File, HTTPException, Depends, Body
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
-from ..services.ml_service import get_predictor
-from ..services.sequence_extractor import extract_snps_from_sequence
-from ..schemas.predict import BatchPredictionResponse
-from ..core.security import get_current_user
-from ..core.database import get_db
-from ..db_models.user import User
-from ..db_models.prediction import Prediction
+from app.services.ml_service import get_predictor
+from app.services.sequence_extractor import extract_snps_from_sequence
+from app.schemas.predict import BatchPredictionResponse
+from app.core.security import get_current_user
+from app.core.database import get_db
+from app.db_models.user import User
+from app.db_models.prediction import Prediction
 
 router = APIRouter(tags=["Predict"])
 
