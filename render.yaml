@@ -11,8 +11,8 @@ services:
     envVars:
       - key: PYTHON_VERSION
         value: 3.10.12
-    # Machine Learning models require a bit of RAM, starter tier is usually required
-    plan: starter
+    # The models are optimized and should fit inside Render's 512MB free tier
+    plan: free
 
   # ------------------------------------
   # 2. Next.js Dashboard (Frontend)
@@ -20,6 +20,7 @@ services:
   - type: web
     name: phenotype-dashboard
     env: node
+    plan: free
     buildCommand: "cd frontend && npm install && npm run build"
     startCommand: "cd frontend && npm run start"
     envVars:
