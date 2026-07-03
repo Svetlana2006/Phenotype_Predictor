@@ -1,8 +1,18 @@
 # Forensic Phenotype Predictor (Version 1.0)
 
-A population-aware, multi-model platform designed for forensic genetic phenotyping. It ingests degraded, unaligned raw DNA sequences and accurately infers human physical traits (Eye Color, Hair Color, Skin Color, and Global Ancestry).
+![Version](https://img.shields.io/badge/version-1.0.0--rc1-blue.svg)
+![Python](https://img.shields.io/badge/python-3.10%2B-blue.svg)
+![Next.js](https://img.shields.io/badge/Next.js-14-black.svg)
+![License](https://img.shields.io/badge/license-All_Rights_Reserved-red.svg)
+
+A population-aware, multi-model platform designed for forensic genetic phenotyping that ingests degraded, unaligned raw DNA sequences and accurately infers human physical traits.
+
+### [🚀 View the Live Demo](https://phenotype-dashboard.onrender.com/)
+
+![Dashboard Home](docs/media/1_home.png)
 
 ## System Architecture Design
+*The following diagram illustrates the flow of data from the investigator's browser down to the ML inference engine.*
 
 ![Architecture Diagram](docs/architecture.png)
 
@@ -10,19 +20,16 @@ A population-aware, multi-model platform designed for forensic genetic phenotypi
 
 *The Next.js Forensic Dashboard provides an intuitive interface for uploading DNA and interpreting AI decisions.*
 
-**1. Home Page**
-![Home Page](docs/media/1_home.png)
-
-**2. CSV Upload Page**
+**1. CSV Upload Page**
 ![Upload CSV](docs/media/2_upload_csv.png)
 
-**3. Raw Sequence Parser**
+**2. Raw Sequence Parser**
 ![Upload Raw Sequence](docs/media/3_upload_raw.png)
 
-**4. Prediction Results & Evidence Quality**
+**3. Prediction Results & Evidence Quality**
 ![Prediction Results](docs/media/4_prediction_results.png)
 
-**5. Explainability Panel**
+**4. Explainability Panel**
 ![Explainability Panel](docs/media/5_explainability.png)
 
 ## What's New in Version 1.0 (Stable Release)
