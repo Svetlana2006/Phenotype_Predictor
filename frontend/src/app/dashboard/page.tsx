@@ -10,6 +10,10 @@ interface PredictionResult {
       estimate: number | null;
       range: [number, number] | null;
     };
+    ancestry?: { confidence: number; probabilities: Record<string, number> };
+    eye_color?: { confidence: number; probabilities: Record<string, number> };
+    hair_color?: { confidence: number; probabilities: Record<string, number> };
+    skin_color?: { confidence: number; probabilities: Record<string, number> };
   };
   hard_labels: {
     ancestry: string;
@@ -20,6 +24,8 @@ interface PredictionResult {
 }
 
 export default function Dashboard() {
+  const [activeTab, setActiveTab] = useState<"csv" | "raw">("csv");
+  const [rawSequence, setRawSequence] = useState("");
   const [isDragging, setIsDragging] = useState(false);
   const [file, setFile] = useState<File | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -117,6 +123,64 @@ export default function Dashboard() {
     }
   };
 
+  const runRawPrediction = async () => {
+    if (!rawSequence.trim()) return;
+    setIsLoading(true);
+    setError(null);
+    try {
+      const loginParams = new URLSearchParams();
+      loginParams.append("username", "test@phenotype.com");
+      loginParams.append("password", "password123");
+      
+      let authRes = await fetch("http://localhost:8000/api/v1/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: loginParams
+      });
+
+      if (!authRes.ok) {
+        await fetch("http://localhost:8000/api/v1/auth/register", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: "test@phenotype.com", password: "password123", role: "researcher" })
+        });
+        authRes = await fetch("http://localhost:8000/api/v1/auth/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/x-www-form-urlencoded" },
+          body: loginParams
+        });
+      }
+
+      const authData = await authRes.json();
+      const token = authData.access_token;
+
+      const res = await fetch("http://localhost:8000/api/v1/predict/raw", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
+        body: JSON.stringify({ sequence: rawSequence }),
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.detail || "Raw sequence prediction failed");
+      }
+
+      const data = await res.json();
+      setResults(data.samples);
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError(String(err));
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const handleCopy = () => {
     if (!results) return;
     const headers = "Sample ID\tAge\tAncestry\tEye Color\tHair Color\tSkin Color";
@@ -183,14 +247,31 @@ export default function Dashboard() {
             {/* Upload Zone */}
             <div 
               className={`glass-panel border-2 border-dashed rounded-3xl p-12 text-center transition-all duration-300 ease-out flex flex-col items-center justify-center min-h-[400px]
-                ${isDragging ? 'border-neon-blue bg-neon-blue/5 scale-[1.02]' : 'border-white/10 hover:border-neon-blue/50'}
+                ${isDragging && activeTab === 'csv' ? 'border-neon-blue bg-neon-blue/5 scale-[1.02]' : 'border-white/10 hover:border-neon-blue/50'}
               `}
               onDragEnter={handleDrag}
               onDragLeave={handleDrag}
               onDragOver={handleDrag}
-              onDrop={handleDrop}
+              onDrop={activeTab === 'csv' ? handleDrop : undefined}
             >
-              <input 
+              <div className="flex gap-4 mb-8 bg-white/5 p-1.5 rounded-full border border-white/10">
+                <button 
+                  onClick={() => setActiveTab("csv")} 
+                  className={`px-6 py-2 rounded-full font-bold text-sm transition-colors ${activeTab === 'csv' ? 'bg-neon-blue text-space-900' : 'text-gray-400 hover:text-white'}`}
+                >
+                  Upload CSV
+                </button>
+                <button 
+                  onClick={() => setActiveTab("raw")}
+                  className={`px-6 py-2 rounded-full font-bold text-sm transition-colors ${activeTab === 'raw' ? 'bg-neon-blue text-space-900' : 'text-gray-400 hover:text-white'}`}
+                >
+                  Raw Sequence
+                </button>
+              </div>
+
+              {activeTab === "csv" ? (
+                <>
+                  <input 
                 type="file" 
                 accept=".csv" 
                 className="hidden" 
@@ -257,6 +338,33 @@ export default function Dashboard() {
                   )}
                 </>
               )}
+              </>
+              ) : (
+                <div className="w-full max-w-lg mx-auto flex flex-col items-center">
+                  <h3 className="text-xl font-bold text-white mb-2">Simulated Sequence Extraction</h3>
+                  <p className="text-gray-400 mb-6 text-sm text-center">Paste a raw unaligned DNA string (ATCG). We will align it locally to extract the relevant HIrisPlex variants dynamically.</p>
+                  <textarea 
+                    value={rawSequence}
+                    onChange={(e) => setRawSequence(e.target.value)}
+                    placeholder="e.g., GGCATTGATGACGTGGAGACGCCTGATCATGAGCGCCAACA..."
+                    className="w-full h-40 bg-space-800/50 border border-white/10 rounded-xl p-4 text-white font-mono text-sm focus:border-neon-blue focus:ring-1 focus:ring-neon-blue outline-none transition-all mb-6"
+                  />
+                  <button 
+                    onClick={runRawPrediction}
+                    disabled={isLoading || !rawSequence.trim()}
+                    className="px-8 py-3 bg-neon-blue hover:bg-neon-blue/90 text-space-900 border border-neon-blue rounded-full font-bold transition-all disabled:opacity-50 flex items-center gap-2"
+                  >
+                    {isLoading ? <><Activity className="w-5 h-5 animate-spin" /> Extracting SNPs...</> : <><Search className="w-5 h-5" /> Analyze Sequence</>}
+                  </button>
+                  
+                  {error && (
+                    <div className="mt-6 p-4 bg-red-500/10 border border-red-500/20 rounded-xl text-red-400 font-medium max-w-lg w-full break-words">
+                      <ShieldAlert className="w-5 h-5 inline mr-2" />
+                      {error}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
             
             {/* Guidelines */}
@@ -315,26 +423,82 @@ export default function Dashboard() {
             
             {results.length === 1 ? (
               // Single Result View
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-6 relative z-10">
-                <div className="bg-white/5 p-6 rounded-2xl border border-white/5 hover:border-neon-blue/30 transition-colors">
-                  <p className="text-neon-blue text-sm mb-2 uppercase tracking-widest font-bold">Age</p>
-                  <p className="text-4xl font-black text-white">
-                    {results[0].predictions.age.estimate !== null ? results[0].predictions.age.estimate.toFixed(1) : 'N/A'} 
-                    {results[0].predictions.age.estimate !== null && <span className="text-lg text-gray-500 font-medium">yrs</span>}
-                  </p>
-                </div>
-                <div className="bg-white/5 p-6 rounded-2xl border border-white/5 hover:border-neon-blue/30 transition-colors">
-                  <p className="text-neon-blue text-sm mb-2 uppercase tracking-widest font-bold">Ancestry</p>
-                  <p className="text-4xl font-black text-white text-glow text-neon-blue">{results[0].hard_labels.ancestry}</p>
-                </div>
-                <div className="bg-white/5 p-6 rounded-2xl border border-white/5 hover:border-neon-blue/30 transition-colors">
-                  <p className="text-neon-blue text-sm mb-2 uppercase tracking-widest font-bold">Eye Color</p>
-                  <p className="text-4xl font-black text-white capitalize">{results[0].hard_labels.eye_color}</p>
-                </div>
-                <div className="bg-white/5 p-6 rounded-2xl border border-white/5 hover:border-neon-blue/30 transition-colors">
-                  <p className="text-neon-blue text-sm mb-2 uppercase tracking-widest font-bold">Hair Color</p>
-                  <p className="text-4xl font-black text-white capitalize">{results[0].hard_labels.hair_color}</p>
-                </div>
+              <div className="flex flex-wrap justify-center gap-6 relative z-10 w-full">
+                {results[0].predictions.age.estimate !== null && (
+                  <div className="flex-1 min-w-[200px] max-w-[300px] bg-white/5 p-6 rounded-2xl border border-white/5 hover:border-neon-blue/30 transition-colors flex flex-col justify-between">
+                    <div>
+                      <p className="text-neon-blue text-sm mb-2 uppercase tracking-widest font-bold">Age</p>
+                      <p className="text-4xl font-black text-white">
+                        {results[0].predictions.age.estimate.toFixed(1)} 
+                        <span className="text-lg text-gray-500 font-medium ml-1">yrs</span>
+                      </p>
+                    </div>
+                  </div>
+                )}
+                
+                {results[0].hard_labels.ancestry !== "Insufficient Data" && (
+                  <div className="flex-1 min-w-[200px] max-w-[300px] bg-white/5 p-6 rounded-2xl border border-white/5 hover:border-neon-blue/30 transition-colors flex flex-col justify-between">
+                    <div>
+                      <p className="text-neon-blue text-sm mb-2 uppercase tracking-widest font-bold">Ancestry</p>
+                      <p className="text-3xl font-black text-white text-glow text-neon-blue break-words">{results[0].hard_labels.ancestry}</p>
+                    </div>
+                    {results[0].predictions.ancestry?.confidence && (
+                      <div className="mt-4">
+                        <span className="text-xs font-bold text-emerald-400 bg-emerald-400/10 px-2.5 py-1 rounded-full border border-emerald-400/20">
+                          {(results[0].predictions.ancestry.confidence * 100).toFixed(1)}% Confidence
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                )}
+                
+                {results[0].hard_labels.eye_color && (
+                  <div className="flex-1 min-w-[200px] max-w-[300px] bg-white/5 p-6 rounded-2xl border border-white/5 hover:border-neon-blue/30 transition-colors flex flex-col justify-between">
+                    <div>
+                      <p className="text-neon-blue text-sm mb-2 uppercase tracking-widest font-bold">Eye Color</p>
+                      <p className="text-3xl font-black text-white capitalize">{results[0].hard_labels.eye_color}</p>
+                    </div>
+                    {results[0].predictions.eye_color?.confidence && (
+                      <div className="mt-4">
+                        <span className="text-xs font-bold text-emerald-400 bg-emerald-400/10 px-2.5 py-1 rounded-full border border-emerald-400/20">
+                          {(results[0].predictions.eye_color.confidence * 100).toFixed(1)}% Confidence
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                )}
+                
+                {results[0].hard_labels.hair_color && (
+                  <div className="flex-1 min-w-[200px] max-w-[300px] bg-white/5 p-6 rounded-2xl border border-white/5 hover:border-neon-blue/30 transition-colors flex flex-col justify-between">
+                    <div>
+                      <p className="text-neon-blue text-sm mb-2 uppercase tracking-widest font-bold">Hair Color</p>
+                      <p className="text-3xl font-black text-white capitalize">{results[0].hard_labels.hair_color}</p>
+                    </div>
+                    {results[0].predictions.hair_color?.confidence && (
+                      <div className="mt-4">
+                        <span className="text-xs font-bold text-emerald-400 bg-emerald-400/10 px-2.5 py-1 rounded-full border border-emerald-400/20">
+                          {(results[0].predictions.hair_color.confidence * 100).toFixed(1)}% Confidence
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                )}
+                
+                {results[0].hard_labels.skin_color && (
+                  <div className="flex-1 min-w-[200px] max-w-[300px] bg-white/5 p-6 rounded-2xl border border-white/5 hover:border-neon-blue/30 transition-colors flex flex-col justify-between">
+                    <div>
+                      <p className="text-neon-blue text-sm mb-2 uppercase tracking-widest font-bold">Skin Color</p>
+                      <p className="text-3xl font-black text-white capitalize">{results[0].hard_labels.skin_color.replace(/_/g, ' ')}</p>
+                    </div>
+                    {results[0].predictions.skin_color?.confidence && (
+                      <div className="mt-4">
+                        <span className="text-xs font-bold text-emerald-400 bg-emerald-400/10 px-2.5 py-1 rounded-full border border-emerald-400/20">
+                          {(results[0].predictions.skin_color.confidence * 100).toFixed(1)}% Confidence
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             ) : (
               // Batch Table View
@@ -372,23 +536,53 @@ export default function Dashboard() {
               </div>
             )}
             
-            {/* Results Legend */}
+            {/* Dynamic Interactive Legend */}
             <div className="mt-8 p-6 bg-white/5 border border-white/10 rounded-2xl">
               <h4 className="text-sm font-bold text-neon-blue uppercase tracking-wider mb-4 flex items-center gap-2">
                 <ShieldAlert className="w-4 h-4" /> Result Interpretation Guide
               </h4>
               <div className="grid md:grid-cols-3 gap-6 text-sm text-gray-400">
+                {/* Skipped Traits */}
                 <div>
-                  <strong className="text-white">Age (N/A)</strong>
-                  <p className="mt-1">Indicates missing Epigenetic DNA Methylation (CpG) data in your CSV. Age cannot be predicted from standard DNA SNPs.</p>
+                  <strong className="text-white block mb-1">Unpredicted Features</strong>
+                  {results[0]?.predictions?.age?.estimate === null && (
+                    <p className="mb-2"><span className="text-white font-semibold">Age:</span> Missing Epigenetic DNA Methylation (CpG) markers. Cannot predict age from SNPs.</p>
+                  )}
+                  {results[0]?.hard_labels?.ancestry === "Insufficient Data" && (
+                    <p><span className="text-white font-semibold">Ancestry:</span> Only {Object.keys(results[0]?.predictions?.eye_color?.probabilities || {}).length ? 'a few' : '0'} SNPs provided. Ancestry requires 2,500+ markers, skipped to prevent median bias.</p>
+                  )}
+                  {results[0]?.predictions?.age?.estimate !== null && results[0]?.hard_labels?.ancestry !== "Insufficient Data" && (
+                    <p>All core biological phenotypes were successfully inferred from the sequence!</p>
+                  )}
                 </div>
+
+                {/* Skin & Eye Dynamics */}
                 <div>
-                  <strong className="text-white">Skin Color (Intermediate)</strong>
-                  <p className="mt-1">Biologically represents olive to light-brown skin tones (common in Mediterranean, Hispanic, or South Asian descent).</p>
+                  <strong className="text-white block mb-1">Biological Dynamics</strong>
+                  {results[0]?.hard_labels?.skin_color ? (
+                    <p className="mb-2">
+                      <span className="text-white capitalize font-semibold">{results[0].hard_labels.skin_color.replace(/_/g, ' ')} Skin:</span> 
+                      {results[0].hard_labels.skin_color === 'dark_or_black' ? ' Driven by homozygous ancestral alleles in the SLC24A5/OCA2 pathways.' : ''}
+                      {results[0].hard_labels.skin_color === 'pale' ? ' Driven by homozygous derived alleles in SLC24A5 and HERC2.' : ''}
+                      {results[0].hard_labels.skin_color === 'intermediate' ? ' Represents a spectrum from olive to light-brown, common in admixed/Mediterranean DNA.' : ''}
+                    </p>
+                  ) : <p>No skin color inferred.</p>}
+                  
+                  {results[0]?.hard_labels?.eye_color && (
+                    <p>
+                      <span className="text-white capitalize font-semibold">{results[0].hard_labels.eye_color} Eyes:</span> 
+                      {results[0].hard_labels.eye_color === 'blue' ? ' Anchored firmly by the derived G/G allele on the HERC2 block.' : ' Heavily influenced by ancestral A/A alleles on OCA2.'}
+                    </p>
+                  )}
                 </div>
+
+                {/* Forensic Certainty */}
                 <div>
-                  <strong className="text-white">Ancestry Bias</strong>
-                  <p className="mt-1">If your sequence lacks the required 2,500+ global SNPs, the model may default to its statistical baseline (e.g., AFR) due to missing features.</p>
+                  <strong className="text-white block mb-1">Forensic Certainty</strong>
+                  <p>
+                    Confidence percentages are derived from the mathematical certainty of the Random Forest and Logistic Regression models. 
+                    Lower confidences (&lt;70%) indicate the provided DNA sits near a biological boundary.
+                  </p>
                 </div>
               </div>
             </div>
