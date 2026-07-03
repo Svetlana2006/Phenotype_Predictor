@@ -556,11 +556,21 @@ export default function Dashboard() {
                   )}
                 </div>
 
-                {/* Skin & Eye Dynamics */}
-                <div>
-                  <strong className="text-white block mb-1">Biological Dynamics</strong>
+                {/* Phenotype & Ancestry Dynamics */}
+                <div className="flex flex-col gap-3">
+                  <strong className="text-white block">Biological & Ancestral Dynamics</strong>
+                  {results[0]?.hard_labels?.ancestry && results[0]?.hard_labels?.ancestry !== "Insufficient Data" && (
+                    <p>
+                      <span className="text-white font-semibold">Ancestry ({results[0].hard_labels.ancestry}):</span>
+                      {results[0].hard_labels.ancestry === 'AFR' ? ' African super-population (Sub-Saharan demographics).' : ''}
+                      {results[0].hard_labels.ancestry === 'AMR' ? ' Admixed American super-population (Latino/Hispanic demographics).' : ''}
+                      {results[0].hard_labels.ancestry === 'EAS' ? ' East Asian super-population.' : ''}
+                      {results[0].hard_labels.ancestry === 'EUR' ? ' European super-population.' : ''}
+                      {results[0].hard_labels.ancestry === 'SAS' ? ' South Asian super-population.' : ''}
+                    </p>
+                  )}
                   {results[0]?.hard_labels?.skin_color ? (
-                    <p className="mb-2">
+                    <p>
                       <span className="text-white capitalize font-semibold">{results[0].hard_labels.skin_color.replace(/_/g, ' ')} Skin:</span> 
                       {results[0].hard_labels.skin_color === 'dark_or_black' ? ' Driven by homozygous ancestral alleles in the SLC24A5/OCA2 pathways.' : ''}
                       {results[0].hard_labels.skin_color === 'pale' ? ' Driven by homozygous derived alleles in SLC24A5 and HERC2.' : ''}
@@ -571,7 +581,7 @@ export default function Dashboard() {
                   {results[0]?.hard_labels?.eye_color && (
                     <p>
                       <span className="text-white capitalize font-semibold">{results[0].hard_labels.eye_color} Eyes:</span> 
-                      {results[0].hard_labels.eye_color === 'blue' ? ' Anchored firmly by the derived G/G allele on the HERC2 block.' : ' Heavily influenced by ancestral A/A alleles on OCA2.'}
+                      {results[0].hard_labels.eye_color === 'blue' ? ' Anchored firmly by the derived allele on the HERC2 block.' : ' Heavily influenced by ancestral alleles on OCA2/HERC2.'}
                     </p>
                   )}
                 </div>
