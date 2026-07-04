@@ -13,6 +13,7 @@ dependencies = [
   "sqlalchemy",
   "python-jose[cryptography]",
   "passlib[bcrypt]",
+  "pydantic-settings",
 ]
 
 [tool.setuptools]
