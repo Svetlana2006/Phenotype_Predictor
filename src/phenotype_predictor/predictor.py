@@ -189,21 +189,17 @@ class PhenotypePredictor:
         sparse_ancestry_model = _load(base / "ancestry_models" / "sparse_ancestry_v1.0.joblib")
         age_model      = _load(base / "age_models" / "ridge_v1.0.joblib")
 
-        # Load ancestry feature list (saved alongside the ancestry table)
-        anc_table  = base / "igsr_ancestry_table.csv"
-        anc_df     = pd.read_csv(anc_table, nrows=0)
-        drop = {"sample_id", "population", "super_population"}
-        ancestry_features = [c for c in anc_df.columns if c not in drop]
+        # Load ancestry feature list
+        with open(base / "ancestry_features.txt") as f:
+            ancestry_features = f.read().strip().split(',')
         
         # Load sparse ancestry features
         with open(base / "ancestry_models" / "sparse_features.txt") as f:
             sparse_ancestry_features = f.read().strip().split(',')
 
-        # Age features = all columns except metadata
-        age_table = base / "gse40279_age_table.csv"
-        age_df    = pd.read_csv(age_table, nrows=0)
-        age_drop  = {"sample_id", "age", "gender", "ethnicity", "tissue"}
-        age_features = [c for c in age_df.columns if c not in age_drop]
+        # Age features
+        with open(base / "age_features.txt") as f:
+            age_features = f.read().strip().split(',')
 
         return cls(
             eye_model=eye_model,
