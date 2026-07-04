@@ -10,6 +10,9 @@ dependencies = [
   "scipy",
   "matplotlib",
   "joblib",
+  "sqlalchemy",
+  "python-jose[cryptography]",
+  "passlib[bcrypt]",
 ]
 
 [tool.setuptools]
