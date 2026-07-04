@@ -6,7 +6,7 @@ services:
     name: phenotype-backend
     env: python
     # We run the command from the root folder so it can access /outputs and /src
-    buildCommand: "pip install -e . && pip install fastapi uvicorn"
+    buildCommand: "pip install -e . && pip install -r backend/requirements.txt"
     startCommand: "PYTHONPATH=.:src:backend uvicorn backend.app.main:app --host 0.0.0.0 --port $PORT"
     envVars:
       - key: PYTHON_VERSION
